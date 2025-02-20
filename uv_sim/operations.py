@@ -4,16 +4,14 @@ class UVSimOperations:
         self.memory = memory
 
     def read(self, address):
-        #Read input from the keyboard and store it
-        #Raises an error if the number is not four digits
+        """Read input from the keyboard and store it."""
         try:
             value = int(input("Enter an integer: "))
-            if -9999 <= value <= 9999:
-                self.memory.set_value(address, value)
-            else:
-                raise ValueError("Value must be a four digit number")
+            if not (-9999 <= value <= 9999):  # Validate input range
+                raise ValueError("Value must be a signed four-digit number (-9999 to +9999).")
+            self.memory.set_value(address, value)
         except ValueError as e:
-            print(f"Invalid input: {e}")
+            raise ValueError(f"Invalid input: {e}")
 
     def write(self, address):
         #Outputs the value of the specified address
@@ -50,9 +48,11 @@ class UVSimOperations:
         if value == 0:
             raise ZeroDivisionError("Attempt to divide by zero.")
         return accumulator // value
-    
+
     def branch(self, address):
-        #Moves the program counter to the specified address
+        """Moves the program counter to the specified address."""
+        if not (0 <= address < 100):  # Validate memory address
+            raise IndexError("Memory address out of range.")
         return address
     
     def branch_neg(self, address, accumulator):
