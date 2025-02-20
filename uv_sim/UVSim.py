@@ -20,6 +20,9 @@ class UVSim:
             self.opcode = self.instruction_register // 100
             self.operand = self.instruction_register % 100
 
+            if self.opcode == 0:  # Handle invalid or empty instruction
+                raise ValueError("Invalid or empty instruction.")
+
             if self.opcode == 10:  # READ - Read a word from the keyboard into a location in memory
                 self.operations.read(self.operand)
             elif self.opcode == 11:  # WRITE - Write a word from a specific location in memory to screen

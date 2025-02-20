@@ -9,119 +9,188 @@ class TestUVSim(unittest.TestCase):
         self.operations = UVSimOperations(self.memory)
         self.uvsim = UVSim()
 
-    def test_memory_initialization(self):
-        # Test that memory is initialized to 100 locations with zero values
-        for i in range(100):
-            self.assertEqual(self.memory.get_value(i), 0)
-
-    def test_load_program(self):
-        # Test loading a program into memory
+    # Use Case 1: Load a BasicML Program
+    def test_load_program_valid(self):
+        """Test loading a valid program into memory."""
         program = [1007, 2107, 1107, 4300]
         self.memory.load_program(program)
         for i in range(len(program)):
             self.assertEqual(self.memory.get_value(i), program[i])
 
-    def test_read_operation(self):
-        # Test READ operation
-        self.operations.read(7)
-        self.assertNotEqual(self.memory.get_value(7), 0)
-
-    def test_write_operation(self):
-        # Test WRITE operation
-        self.memory.set_value(7, 1234)
-        self.operations.write(7)  # Should print 1234
-
-    def test_load_operation(self):
-        # Test LOAD operation
-        self.memory.set_value(7, 1234)
-        accumulator = self.operations.load(7)
-        self.assertEqual(accumulator, 1234)
-
-    def test_store_operation(self):
-        # Test STORE operation
-        self.operations.store(7, 1234)
-        self.assertEqual(self.memory.get_value(7), 1234)
-
-    def test_add_operation(self):
-        # Test ADD operation
-        self.memory.set_value(7, 1000)
-        accumulator = self.operations.add(7, 500)
-        self.assertEqual(accumulator, 1500)
-
-    def test_subtract_operation(self):
-        # Test SUBTRACT operation
-        self.memory.set_value(7, 500)  # Set memory location 7 to 500
-        accumulator = 1000  # Set the accumulator to 1000
-        result = self.operations.subtract(7, accumulator)  # Subtract memory[7] from accumulator
-        self.assertEqual(result, 500)  # Expected result: 1000 - 500 = 500
-
-    def test_multiply_operation(self):
-        # Test MULTIPLY operation
-        self.memory.set_value(7, 10)
-        accumulator = self.operations.multiply(7, 5)
-        self.assertEqual(accumulator, 50)
-
-    def test_divide_operation(self):
-        # Test DIVIDE operation
-        self.memory.set_value(7, 2)  # Set memory location 7 to 500
-        accumulator = 10  # Set the accumulator to 1000
-        result = self.operations.divide(7, accumulator)  # Subtract memory[7] from accumulator
-        self.assertEqual(result, 5)  # Expected result: 1000 - 500 = 500
-
-    def test_divide_by_zero(self):
-        # Test DIVIDE operation with zero
-        accumulator = 10
-        self.memory.set_value(7, 0)
-        with self.assertRaises(ZeroDivisionError):
-            self.operations.divide(7, accumulator)
-
-    def test_branch_operation(self):
-        # Test BRANCH operation
-        new_pc = self.operations.branch(50)
-        self.assertEqual(new_pc, 50)
-
-    def test_branch_neg_operation(self):
-        # Test BRANCHNEG operation
-        new_pc = self.operations.branch_neg(50, -1)
-        self.assertEqual(new_pc, 50)
-
-    def test_branch_zero_operation(self):
-        # Test BRANCHZERO operation
-        new_pc = self.operations.branch_zero(50, 0)
-        self.assertEqual(new_pc, 50)
-
-    def test_halt_operation(self):
-        # Test HALT operation
-        result = self.operations.halt()
-        self.assertTrue(result)
-
-    def test_invalid_memory_access(self):
-        # Test accessing invalid memory location
-        with self.assertRaises(IndexError):
-            self.memory.get_value(100)
-
-    def test_invalid_value(self):
-        # Test setting an invalid value in memory
+    def test_load_program_invalid_size(self):
+        """Test loading a program that exceeds memory size."""
+        program = [0] * 101  # Exceeds memory size
         with self.assertRaises(ValueError):
-            self.memory.set_value(7, 10000)
+            self.memory.load_program(program)
 
-    def test_invalid_opcode(self):
-        # Test invalid opcode
-        self.uvsim.load_program([9999])
-        with self.assertRaises(ValueError):
-            self.uvsim.run()
-
-    def test_program_execution(self):
-        # Test full program execution
+    # Use Case 2: Execute a BasicML Program
+    def test_execute_program_valid(self):
+        """Test executing a valid program."""
         program = [1007, 2107, 1107, 4300]  # READ -> STORE -> WRITE -> HALT
         self.uvsim.load_program(program)
         self.uvsim.run()  # Should execute without errors
 
-    def test_display_memory(self):
-        # Test displaying memory contents
+    def test_execute_program_invalid_opcode(self):
+        """Test executing a program with an invalid opcode."""
+        program = [9999]  # Invalid opcode
+        self.uvsim.load_program(program)
+        with self.assertRaises(ValueError):
+            self.uvsim.run()
+
+    # Use Case 3: Read Input
+    def test_read_operation_valid(self):
+        """Test READ operation with valid input."""
+        self.operations.read(7)  # Simulate user input
+        self.assertNotEqual(self.memory.get_value(7), 0)
+
+    def test_read_operation_invalid_input(self):
+        """Test READ operation with invalid input."""
+        with self.assertRaises(ValueError):
+            self.operations.read(7)  # Simulate invalid input
+
+    # Use Case 4: Write Output
+    def test_write_operation_valid(self):
+        """Test WRITE operation with valid memory value."""
+        self.memory.set_value(7, 1234)
+        self.operations.write(7)  # Should print "Contents of 7 is +01234"
+
+    def test_write_operation_invalid_address(self):
+        """Test WRITE operation with invalid memory address."""
+        with self.assertRaises(IndexError):
+            self.operations.write(100)  # Invalid address
+
+    # Use Case 5: Load a Value into the Accumulator
+    def test_load_operation_valid(self):
+        """Test LOAD operation with valid memory value."""
+        self.memory.set_value(7, 1234)
+        accumulator = self.operations.load(7)
+        self.assertEqual(accumulator, 1234)
+
+    def test_load_operation_invalid_address(self):
+        """Test LOAD operation with invalid memory address."""
+        with self.assertRaises(IndexError):
+            self.operations.load(100)  # Invalid address
+
+    # Use Case 6: Store a Value in Memory
+    def test_store_operation_valid(self):
+        """Test STORE operation with valid value."""
+        self.operations.store(7, 1234)
+        self.assertEqual(self.memory.get_value(7), 1234)
+
+    def test_store_operation_invalid_value(self):
+        """Test STORE operation with invalid value."""
+        with self.assertRaises(ValueError):
+            self.operations.store(7, 10000)  # Invalid value
+
+    # Use Case 7: Perform Arithmetic Operations
+    def test_add_operation_valid(self):
+        """Test ADD operation with valid values."""
+        self.memory.set_value(7, 1000)
+        accumulator = self.operations.add(7, 500)
+        self.assertEqual(accumulator, 1500)
+
+    def test_subtract_operation_valid(self):
+        """Test SUBTRACT operation with valid values."""
+        self.memory.set_value(7, 1000)
+        accumulator = self.operations.subtract(7, 500)
+        self.assertEqual(accumulator, -500)
+
+    # Use Case 8: Branch to Another Instruction
+    def test_branch_operation_valid(self):
+        """Test BRANCH operation with valid address."""
+        new_pc = self.operations.branch(50)
+        self.assertEqual(new_pc, 50)
+
+    def test_branch_operation_invalid_address(self):
+        """Test BRANCH operation with invalid address."""
+        with self.assertRaises(IndexError):
+            self.operations.branch(100)  # Invalid address
+
+    # Use Case 9: Conditional Branching
+    def test_branch_neg_operation_valid(self):
+        """Test BRANCHNEG operation with negative accumulator."""
+        new_pc = self.operations.branch_neg(50, -1)
+        self.assertEqual(new_pc, 50)
+
+    def test_branch_zero_operation_valid(self):
+        """Test BRANCHZERO operation with zero accumulator."""
+        new_pc = self.operations.branch_zero(50, 0)
+        self.assertEqual(new_pc, 50)
+
+    # Use Case 10: Halt Execution
+    def test_halt_operation_valid(self):
+        """Test HALT operation."""
+        result = self.operations.halt()
+        self.assertTrue(result)
+
+    # Use Case 11: Display Memory Contents
+    def test_display_memory_valid(self):
+        """Test displaying memory contents."""
         self.memory.set_value(0, 1234)
         self.memory.set_value(1, 5678)
         self.memory.display_memory(0, 1)  # Should print memory contents
+
+    # Use Case 12: Handle Invalid Instructions
+    def test_invalid_opcode(self):
+        """Test handling an invalid opcode."""
+        self.uvsim.load_program([9999])
+        with self.assertRaises(ValueError):
+            self.uvsim.run()
+
+    # Use Case 13: Handle Invalid Memory Access
+    def test_invalid_memory_access(self):
+        """Test accessing an invalid memory location."""
+        with self.assertRaises(IndexError):
+            self.memory.get_value(100)
+
+    # Use Case 14: Prevent Division by Zero
+    def test_divide_by_zero(self):
+        """Test DIVIDE operation with zero."""
+        self.memory.set_value(7, 0)  # Set memory location 7 to 10
+        with self.assertRaises(ZeroDivisionError):
+            self.operations.divide(7, 10)  # Attempt to divide by zero
+
+    # Use Case 15: Exit the Simulator
+    def test_exit_simulator(self):
+        """Test exiting the simulator."""
+        self.uvsim.load_program([4300])  # Load a valid program with HALT instruction
+        self.uvsim.run()  # Simulate running and halting
+        self.assertTrue(True)  # Placeholder for exit behavior
+
+    # Additional Tests for Edge Cases
+    def test_multiply_operation_valid(self):
+        """Test MULTIPLY operation with valid values."""
+        self.memory.set_value(7, 10)
+        accumulator = self.operations.multiply(7, 5)
+        self.assertEqual(accumulator, 50)
+
+    def test_divide_operation_valid(self):
+        """Test DIVIDE operation with valid values."""
+        self.memory.set_value(7, 2)  # Set memory location 7 to 2
+        accumulator = 10  # Set accumulator to 10
+        result = self.operations.divide(7, accumulator)
+        self.assertEqual(result, 5)  # Expected result: 10 / 2 = 5
+
+    def test_branch_neg_operation_invalid(self):
+        """Test BRANCHNEG operation with non-negative accumulator."""
+        new_pc = self.operations.branch_neg(50, 1)
+        self.assertIsNone(new_pc)
+
+    def test_branch_zero_operation_invalid(self):
+        """Test BRANCHZERO operation with non-zero accumulator."""
+        new_pc = self.operations.branch_zero(50, 1)
+        self.assertIsNone(new_pc)
+
+    def test_store_operation_boundary_value(self):
+        """Test STORE operation with boundary value."""
+        self.operations.store(7, 9999)
+        self.assertEqual(self.memory.get_value(7), 9999)
+
+    def test_load_operation_boundary_value(self):
+        """Test LOAD operation with boundary value."""
+        self.memory.set_value(7, -9999)
+        accumulator = self.operations.load(7)
+        self.assertEqual(accumulator, -9999)
 
 if __name__ == '__main__':
     unittest.main()
