@@ -1,18 +1,28 @@
 UVSim README
 
+
 Introduction
 
 UVSim is a simple virtual machine for running programs written in BasicML, a basic machine language designed for educational purposes. The simulator allows users to enter and execute machine-level programs interactively.
 
+
 Prerequisites
 
 Python 3.x must be installed on your system.
+PyQt5 must also be installed.
+
 
 Installation
 
 Clone or download the UVSim repository.
 
 Ensure that all required files (UVSim.py, memory_structure.py, operations.py) are in the same directory.
+
+Install PyQt5 using pip with the command below
+
+pip install PyQt5
+
+
 
 How to Run
 
@@ -22,15 +32,22 @@ Navigate to the directory containing UVSim.py.
 
 Run the command:
 
-python UVSim.py
+python uvsim_gui.py
 
-The simulator will prompt you to enter a program one instruction at a time.
+The application will display the memory registers on the left hand side of the window.
 
-Enter each instruction as a signed four-digit integer (e.g., +1007 for READ instruction).
+Enter each instruction as a signed four-digit integer (e.g., +1007 for READ instruction) in these registers
 
-To finish entering the program, input -99999.
+To finish entering the program, click either the "Run" button at the top right to run the entire program, or the "Step Execution" button to run one instruction at a time.
 
 The program will then execute according to the BasicML instruction set.
+
+When running, enter user input into the dialog box at the top right.
+
+Click the "Halt" button to stop the instructions from continuing.
+
+Click the "Reset" button to return the program to a completely blank slate.
+
 
 Basic Usage
 
@@ -58,18 +75,18 @@ BRANCHZERO (42): Jump to a memory location if the accumulator is zero.
 
 HALT (43): Stop execution.
 
+
 Example Program
 
 Here is a simple example program that reads a number, stores it, and then writes it back to the screen:
 
-00 ? +1007  # READ input into memory[07]
-01 ? +2107  # STORE value from accumulator into memory[07]
-02 ? +1107  # WRITE value from memory[07] to screen
-03 ? +4300  # HALT program execution
+00 ? +1007 # READ input into memory[07] 01 ? +2107 # STORE value from accumulator into memory[07] 02 ? +1107 # WRITE value from memory[07] to screen 03 ? +4300 # HALT program execution
+
 
 Exiting UVSim
 
-To exit the program, close the terminal window or press Ctrl + C while the simulator is running.
+To exit the program, close the application window.
+
 
 Troubleshooting
 
@@ -79,7 +96,7 @@ If a memory error occurs, check that you are not trying to access an out-of-rang
 
 If division by zero is attempted, an error message will be displayed, and execution will halt.
 
+
 Contact
 
 For any issues or questions, please reach out to the development team.
-
