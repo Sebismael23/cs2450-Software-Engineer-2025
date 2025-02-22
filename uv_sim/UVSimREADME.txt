@@ -38,15 +38,15 @@ The application will display the memory registers on the left hand side of the w
 
 Enter each instruction as a signed four-digit integer (e.g., +1007 for READ instruction) in these registers
 
-To finish entering the program, click either the "Run" button at the top right to run the entire program, or the "Step Execution" button to run one instruction at a time.
+To finish entering the program, click either the "Run" button at the top right to run the entire program. The "Step Execution" button is a work in progress.
 
 The program will then execute according to the BasicML instruction set.
 
-When running, enter user input into the dialog box at the top right.
+When running, enter user input into the dialog box that pops up when the program executes.
 
 Click the "Halt" button to stop the instructions from continuing.
 
-Click the "Reset" button to return the program to a completely blank slate.
+Click the "Reset" button to reset the memory.
 
 
 Basic Usage
