@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QLineEdit,
     QScrollArea,
+    QInputDialog  # Added for modal input
 )
 from memory_structure import UVSimMemory
 from operations import UVSimOperations
@@ -154,20 +155,31 @@ class UVSimGUI(QWidget):
         self.console_output.append(f"Executing instruction at {self.uvsim.program_counter:02d}: opcode {opcode}, operand {operand}")
         
         if opcode == 10:  # READ
-            # Use the user_input text instead of a popup
             text_value = self.user_input.text().strip()
-            try:
-                value = int(text_value)
-                if -9999 <= value <= 9999:
-                    self.uvsim.memory.set_value(operand, value)
-                    self.console_output.append(f"READ: Stored {value:+05d} in memory[{operand}]")
-                    # Clear the user input box after reading
-                    self.user_input.clear()
-                else:
-                    self.console_output.append("Error: Value out of range for READ instruction.")
+            if text_value == "":
+                # Blocking modal dialog to wait for input
+                value, ok = QInputDialog.getInt(
+                    self,
+                    "Input Required",
+                    "Enter an integer:",
+                    0, -9999, 9999, 1
+                )
+                if not ok:
+                    self.console_output.append("Error: Input cancelled.")
                     return False
-            except ValueError:
-                self.console_output.append("Error: Invalid integer input for READ.")
+            else:
+                try:
+                    value = int(text_value)
+                except ValueError:
+                    self.console_output.append("Error: Invalid integer input for READ.")
+                    return False
+
+            if -9999 <= value <= 9999:
+                self.uvsim.memory.set_value(operand, value)
+                self.console_output.append(f"READ: Stored {value:+05d} in memory[{operand}]")
+                self.user_input.clear()
+            else:
+                self.console_output.append("Error: Value out of range for READ instruction.")
                 return False
         elif opcode == 11:  # WRITE
             value = self.uvsim.memory.get_value(operand)
