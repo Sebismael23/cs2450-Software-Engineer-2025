@@ -1,4 +1,6 @@
 import sys
+import json
+import os
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -9,58 +11,108 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QLineEdit,
     QScrollArea,
-    QInputDialog  # Added for modal input
+    QInputDialog
 )
 from memory_structure import UVSimMemory
 from operations import UVSimOperations
 from UVSim import UVSim
 
 class UVSimGUI(QWidget):
+    CONFIG_FILE = "color_config.json"
+
     def __init__(self):
         super().__init__()
         self.uvsim = UVSim()
+        self.color_config = self.load_color_config()
         self.initUI()
+        self.apply_color_scheme()
     
+    def load_color_config(self):
+        # Default UVU colors: primary is dark green, off-color is white.
+        default_config = {
+            "primary_color": "#4C721D",
+            "off_color": "#FFFFFF"
+        }
+        if os.path.exists(self.CONFIG_FILE):
+            try:
+                with open(self.CONFIG_FILE, "r") as f:
+                    config = json.load(f)
+                    # Basic validation: Check that both keys exist and are strings.
+                    if ("primary_color" in config and "off_color" in config and
+                        isinstance(config["primary_color"], str) and isinstance(config["off_color"], str)):
+                        return config
+            except Exception as e:
+                print("Error loading color configuration:", e)
+        return default_config
+
+    def save_color_config(self):
+        try:
+            with open(self.CONFIG_FILE, "w") as f:
+                json.dump(self.color_config, f, indent=4)
+        except Exception as e:
+            print("Error saving color configuration:", e)
+
+    def apply_color_scheme(self):
+        primary = self.color_config["primary_color"]
+        off = self.color_config["off_color"]
+        style = f"""
+        QWidget {{
+            background-color: {off};
+            color: #333333;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 12pt;
+        }}
+        QLineEdit {{
+            background-color: #F0F0F0;
+            border: 1px solid {primary};
+            padding: 4px;
+            color: #333333;
+        }}
+        QPushButton {{
+            background-color: {primary};
+            border: none;
+            padding: 6px 12px;
+            color: {off};
+        }}
+        QPushButton:hover {{
+            background-color: #666666;
+        }}
+        QTextEdit {{
+            background-color: #F0F0F0;
+            border: 1px solid {primary};
+            color: #333333;
+        }}
+        QLabel {{
+            font-weight: bold;
+        }}
+        QScrollArea {{
+            border: none;
+        }}
+        /* Style the vertical scrollbar */
+        QScrollBar:vertical {{
+            background: {off};
+            width: 15px;
+            margin: 15px 3px 15px 3px;
+        }}
+        QScrollBar::handle:vertical {{
+            background: {primary};
+            min-height: 20px;
+            border-radius: 7px;
+        }}
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical,
+        QScrollBar::add-page:vertical,
+        QScrollBar::sub-page:vertical {{
+            background: none;
+        }}
+    """
+        self.setStyleSheet(style)
+
+
     def initUI(self):
         self.setWindowTitle("UVSim - Virtual Machine")
         self.setGeometry(100, 100, 1600, 1200)
         
-        # Styling
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #2b2b2b;
-                color: #f0f0f0;
-                font-family: 'Segoe UI', sans-serif;
-                font-size: 12pt;
-            }
-            QLineEdit {
-                background-color: #3c3f41;
-                border: 1px solid #555;
-                padding: 4px;
-                color: #f0f0f0;
-            }
-            QPushButton {
-                background-color: #555;
-                border: none;
-                padding: 6px 12px;
-                color: #f0f0f0;
-            }
-            QPushButton:hover {
-                background-color: #666;
-            }
-            QTextEdit {
-                background-color: #3c3f41;
-                border: 1px solid #555;
-                color: #f0f0f0;
-            }
-            QLabel {
-                font-weight: bold;
-            }
-            QScrollArea {
-                border: none;
-            }
-        """)
-
         main_layout = QHBoxLayout()
         left_layout = QVBoxLayout()
         right_layout = QVBoxLayout()
@@ -110,6 +162,11 @@ class UVSimGUI(QWidget):
         right_layout.addWidget(self.accumulator_label)
         right_layout.addWidget(self.program_counter_label)
         
+        # Add button to configure color scheme
+        self.config_button = QPushButton("Configure Color Scheme")
+        right_layout.addWidget(self.config_button)
+        self.config_button.clicked.connect(self.configure_color_scheme)
+        
         # Adding layouts to main layout
         main_layout.addLayout(left_layout, 1)
         main_layout.addLayout(right_layout, 2)
@@ -121,6 +178,33 @@ class UVSimGUI(QWidget):
         self.reset_button.clicked.connect(self.reset_simulator)
         self.halt_button.clicked.connect(self.halt_execution)
     
+    def configure_color_scheme(self):
+        # Allow user to enter a new primary color.
+        primary, ok1 = QInputDialog.getText(
+            self, "Set Primary Color", 
+            "Enter primary color (hex, e.g., #4C721D):", text=self.color_config["primary_color"]
+        )
+        if not ok1 or not primary.strip():
+            return
+        
+        off, ok2 = QInputDialog.getText(
+            self, "Set Off-Color", 
+            "Enter off-color (hex, e.g., #FFFFFF):", text=self.color_config["off_color"]
+        )
+        if not ok2 or not off.strip():
+            return
+
+        # Basic validation: ensure they start with '#' and have 7 characters.
+        if not (primary.startswith("#") and len(primary) == 7 and off.startswith("#") and len(off) == 7):
+            self.console_output.append("Error: Colors must be in hex format (e.g., #RRGGBB).")
+            return
+        
+        self.color_config["primary_color"] = primary
+        self.color_config["off_color"] = off
+        self.save_color_config()
+        self.apply_color_scheme()
+        self.console_output.append("Color scheme updated.")
+
     def update_memory_display(self):
         for i in range(100):
             self.memory_labels[i].setText(f"{self.uvsim.memory.get_value(i):+05d}")
@@ -157,7 +241,6 @@ class UVSimGUI(QWidget):
         if opcode == 10:  # READ
             text_value = self.user_input.text().strip()
             if text_value == "":
-                # Blocking modal dialog to wait for input
                 value, ok = QInputDialog.getInt(
                     self,
                     "Input Required",
@@ -275,7 +358,6 @@ class UVSimGUI(QWidget):
     
     def halt_execution(self):
         self.console_output.append("Program halted by user.")
-        # Halt
         self.uvsim.program_counter = 100
         self.uvsim.operations.halt()
         self.update_memory_display()
