@@ -11,10 +11,11 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QLineEdit,
     QScrollArea,
-    QInputDialog
+    QInputDialog,
+    QFileDialog
 )
 from memory_structure import UVSimMemory
-from operations import UVSimOperations
+from operations import InputOutputOps, LoadStoreOps, ArithmeticOps, ControlOps
 from UVSim import UVSim
 
 class UVSimGUI(QWidget):
@@ -145,10 +146,18 @@ class UVSimGUI(QWidget):
         self.reset_button = QPushButton("Reset")
         self.halt_button = QPushButton("Halt")
         
+        # File operation buttons
+        file_buttons_layout = QHBoxLayout()
+        self.load_file_button = QPushButton("Load Instructions File")
+        self.save_file_button = QPushButton("Save Instructions")
+        file_buttons_layout.addWidget(self.load_file_button)
+        file_buttons_layout.addWidget(self.save_file_button)
+        
         right_layout.addWidget(self.run_button)
         right_layout.addWidget(self.step_button)
         right_layout.addWidget(self.reset_button)
         right_layout.addWidget(self.halt_button)
+        right_layout.addLayout(file_buttons_layout)
         
         # Console Output (Below Buttons)
         self.console_output = QTextEdit()
@@ -177,6 +186,8 @@ class UVSimGUI(QWidget):
         self.step_button.clicked.connect(self.step_execution)
         self.reset_button.clicked.connect(self.reset_simulator)
         self.halt_button.clicked.connect(self.halt_execution)
+        self.load_file_button.clicked.connect(self.load_instruction_file)
+        self.save_file_button.clicked.connect(self.save_instruction_file)
     
     def configure_color_scheme(self):
         # Allow user to enter a new primary color.
@@ -359,8 +370,90 @@ class UVSimGUI(QWidget):
     def halt_execution(self):
         self.console_output.append("Program halted by user.")
         self.uvsim.program_counter = 100
-        self.uvsim.operations.halt()
+        self.uvsim.control.halt()
         self.update_memory_display()
+
+    def load_instruction_file(self):
+        """Load instructions from a text file into memory."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Instructions File",
+            "",
+            "Text Files (*.txt);;All Files (*)"
+        )
+        
+        if not file_path:
+            return
+            
+        try:
+            with open(file_path, 'r') as file:
+                instructions = []
+                for line in file:
+                    # Remove any whitespace and comments
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        try:
+                            # Convert the instruction to an integer
+                            instruction = int(line)
+                            if -9999 <= instruction <= 9999:
+                                instructions.append(instruction)
+                            else:
+                                raise ValueError(f"Instruction {instruction} out of valid range (-9999 to 9999)")
+                        except ValueError as e:
+                            self.console_output.append(f"Error parsing instruction: {line}")
+                            return
+                
+                # Clear existing memory
+                for label in self.memory_labels:
+                    label.setText("0000")
+                
+                # Load the new instructions
+                for i, instruction in enumerate(instructions):
+                    if i < 100:  # Ensure we don't exceed memory size
+                        self.memory_labels[i].setText(f"{instruction:+05d}")
+                    else:
+                        self.console_output.append("Warning: Program exceeds memory size. Some instructions were not loaded.")
+                        break
+                
+                self.console_output.append(f"Successfully loaded {min(len(instructions), 100)} instructions from {os.path.basename(file_path)}")
+                
+        except Exception as e:
+            self.console_output.append(f"Error loading file: {str(e)}")
+
+    def save_instruction_file(self):
+        """Save the current memory contents to a text file."""
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Instructions File",
+            "",
+            "Text Files (*.txt);;All Files (*)"
+        )
+        
+        if not file_path:
+            return
+            
+        try:
+            with open(file_path, 'w') as file:
+                # Write a header comment
+                file.write("# UVSim Instructions File\n")
+                file.write("# Generated from memory contents\n\n")
+                
+                # Write all non-zero memory contents
+                instructions_written = 0
+                for i, label in enumerate(self.memory_labels):
+                    try:
+                        value = int(label.text())
+                        if value != 0:  # Only write non-zero values
+                            file.write(f"{value:+05d}\n")
+                            instructions_written += 1
+                    except ValueError:
+                        self.console_output.append(f"Warning: Invalid value in memory location {i}, skipping...")
+                        continue
+                
+                self.console_output.append(f"Successfully saved {instructions_written} instructions to {os.path.basename(file_path)}")
+                
+        except Exception as e:
+            self.console_output.append(f"Error saving file: {str(e)}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

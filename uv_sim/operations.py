@@ -1,10 +1,10 @@
-class UVSimOperations:
+class InputOutputOps:
     def __init__(self, memory):
         #Initialize the operations
         self.memory = memory
 
     def read(self, address):
-        """Read input from the keyboard and store it."""
+        #Read input from the keyboard and store it
         try:
             value = int(input("Enter an integer: "))
             if not (-9999 <= value <= 9999):  # Validate input range
@@ -18,6 +18,11 @@ class UVSimOperations:
         value = self.memory.get_value(address)
         print(f"Contents of {address} is {value:+05d}")
 
+class LoadStoreOps:
+    def __init__(self, memory):
+        #Initialize the operations
+        self.memory = memory
+
     def load(self, address):
         #Loads a word from the specified address to the accumulator
         value = self.memory.get_value(address)
@@ -26,6 +31,11 @@ class UVSimOperations:
     def store(self, address, accumulator):
         #Store the value from the accumulator into the specified address
         self.memory.set_value(address, accumulator)
+
+class ArithmeticOps:
+    def __init__(self, memory):
+        #Initialize the operations
+        self.memory = memory
 
     def add(self, address, accumulator):
         #Adds the value at the specified address to the accumulator
@@ -48,9 +58,14 @@ class UVSimOperations:
         if value == 0:
             raise ZeroDivisionError("Attempt to divide by zero.")
         return accumulator // value
+    
+class ControlOps:
+    def __init__(self, memory):
+        #Initialize the operations
+        self.memory = memory
 
     def branch(self, address):
-        """Moves the program counter to the specified address."""
+        #Moves the program counter to the specified address
         if not (0 <= address < 100):  # Validate memory address
             raise IndexError("Memory address out of range.")
         return address
