@@ -80,8 +80,20 @@ Example Program
 
 Here is a simple example program that reads a number, stores it, and then writes it back to the screen:
 
-00 ? +1007 # READ input into memory[07] 01 ? +2107 # STORE value from accumulator into memory[07] 02 ? +1107 # WRITE value from memory[07] to screen 03 ? +4300 # HALT program execution
+00 ? +1007 # READ input into memory[07] 
+01 ? +2107 # STORE value from accumulator into memory[07] 
+02 ? +1107 # WRITE value from memory[07] to screen 
+03 ? +4300 # HALT program execution
 
+Saving and Loading
+
+To save a program that is already in memory, click the "Save Instructions" button. This will save the program into a .txt file to a location of your choice on your computer.
+
+To load a program, click on the "Load Instructions File" button. A file browser window will open. Navigate to the desired file and open it. This will load a previously saved program into the memory registers of the simulator.
+
+Color Scheme
+
+The simulator allows you to change the primary and secondary colors of the window. To do this, click on the "Configure Color Scheme" button at the bottom of the window. This will bring up a dialog box. Enter the color in hex code that you wish for the primary color to be, then click OK. The next box will ask you to do the same for the secondary color. After clicking OK for the second time, the color will update to your specifications.
 
 Exiting UVSim
 
