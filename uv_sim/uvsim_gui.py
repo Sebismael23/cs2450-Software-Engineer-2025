@@ -1,5 +1,4 @@
 import sys
-import json
 import os
 from PyQt5.QtWidgets import (
     QApplication,
@@ -14,102 +13,17 @@ from PyQt5.QtWidgets import (
     QInputDialog,
     QFileDialog
 )
-from memory_structure import UVSimMemory
-from operations import InputOutputOps, LoadStoreOps, ArithmeticOps, ControlOps
 from UVSim import UVSim
+from color_scheme import ColorScheme
 
 class UVSimGUI(QWidget):
-    CONFIG_FILE = "color_config.json"
-
     def __init__(self):
         super().__init__()
         self.uvsim = UVSim()
-        self.color_config = self.load_color_config()
+        self.color_scheme = ColorScheme() 
         self.initUI()
-        self.apply_color_scheme()
+        self.color_scheme.apply_color_scheme(self)
     
-    def load_color_config(self):
-        # Default UVU colors: primary is dark green, off-color is white.
-        default_config = {
-            "primary_color": "#4C721D",
-            "off_color": "#FFFFFF"
-        }
-        if os.path.exists(self.CONFIG_FILE):
-            try:
-                with open(self.CONFIG_FILE, "r") as f:
-                    config = json.load(f)
-                    # Basic validation: Check that both keys exist and are strings.
-                    if ("primary_color" in config and "off_color" in config and
-                        isinstance(config["primary_color"], str) and isinstance(config["off_color"], str)):
-                        return config
-            except Exception as e:
-                print("Error loading color configuration:", e)
-        return default_config
-
-    def save_color_config(self):
-        try:
-            with open(self.CONFIG_FILE, "w") as f:
-                json.dump(self.color_config, f, indent=4)
-        except Exception as e:
-            print("Error saving color configuration:", e)
-
-    def apply_color_scheme(self):
-        primary = self.color_config["primary_color"]
-        off = self.color_config["off_color"]
-        style = f"""
-        QWidget {{
-            background-color: {off};
-            color: #333333;
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 12pt;
-        }}
-        QLineEdit {{
-            background-color: #F0F0F0;
-            border: 1px solid {primary};
-            padding: 4px;
-            color: #333333;
-        }}
-        QPushButton {{
-            background-color: {primary};
-            border: none;
-            padding: 6px 12px;
-            color: {off};
-        }}
-        QPushButton:hover {{
-            background-color: #666666;
-        }}
-        QTextEdit {{
-            background-color: #F0F0F0;
-            border: 1px solid {primary};
-            color: #333333;
-        }}
-        QLabel {{
-            font-weight: bold;
-        }}
-        QScrollArea {{
-            border: none;
-        }}
-        /* Style the vertical scrollbar */
-        QScrollBar:vertical {{
-            background: {off};
-            width: 15px;
-            margin: 15px 3px 15px 3px;
-        }}
-        QScrollBar::handle:vertical {{
-            background: {primary};
-            min-height: 20px;
-            border-radius: 7px;
-        }}
-        QScrollBar::add-line:vertical,
-        QScrollBar::sub-line:vertical,
-        QScrollBar::add-page:vertical,
-        QScrollBar::sub-page:vertical {{
-            background: none;
-        }}
-    """
-        self.setStyleSheet(style)
-
-
     def initUI(self):
         self.setWindowTitle("UVSim - Virtual Machine")
         self.setGeometry(100, 100, 1600, 1200)
@@ -190,31 +104,7 @@ class UVSimGUI(QWidget):
         self.save_file_button.clicked.connect(self.save_instruction_file)
     
     def configure_color_scheme(self):
-        # Allow user to enter a new primary color.
-        primary, ok1 = QInputDialog.getText(
-            self, "Set Primary Color", 
-            "Enter primary color (hex, e.g., #4C721D):", text=self.color_config["primary_color"]
-        )
-        if not ok1 or not primary.strip():
-            return
-        
-        off, ok2 = QInputDialog.getText(
-            self, "Set Off-Color", 
-            "Enter off-color (hex, e.g., #FFFFFF):", text=self.color_config["off_color"]
-        )
-        if not ok2 or not off.strip():
-            return
-
-        # Basic validation: ensure they start with '#' and have 7 characters.
-        if not (primary.startswith("#") and len(primary) == 7 and off.startswith("#") and len(off) == 7):
-            self.console_output.append("Error: Colors must be in hex format (e.g., #RRGGBB).")
-            return
-        
-        self.color_config["primary_color"] = primary
-        self.color_config["off_color"] = off
-        self.save_color_config()
-        self.apply_color_scheme()
-        self.console_output.append("Color scheme updated.")
+        self.color_scheme.configure_color_scheme(self, self.console_output)
 
     def update_memory_display(self):
         for i in range(100):
@@ -237,105 +127,26 @@ class UVSimGUI(QWidget):
                 self.console_output.append(f"Error: Non-numeric value in memory[{i}]")
                 return None
         return program
-
-    def execute_instruction(self):
-        """Executes a single instruction and returns True if execution should continue."""
-        if self.uvsim.program_counter < 0 or self.uvsim.program_counter >= 100:
-            self.console_output.append("Program counter out of range. Halting execution.")
-            return False
-        
-        instruction = self.uvsim.memory.get_value(self.uvsim.program_counter)
-        opcode = instruction // 100
-        operand = instruction % 100
-        self.console_output.append(f"Executing instruction at {self.uvsim.program_counter:02d}: opcode {opcode}, operand {operand}")
-        
-        if opcode == 10:  # READ
-            text_value = self.user_input.text().strip()
-            if text_value == "":
-                value, ok = QInputDialog.getInt(
-                    self,
-                    "Input Required",
-                    "Enter an integer:",
-                    0, -9999, 9999, 1
-                )
-                if not ok:
-                    self.console_output.append("Error: Input cancelled.")
-                    return False
-            else:
-                try:
-                    value = int(text_value)
-                except ValueError:
-                    self.console_output.append("Error: Invalid integer input for READ.")
-                    return False
-
-            if -9999 <= value <= 9999:
-                self.uvsim.memory.set_value(operand, value)
-                self.console_output.append(f"READ: Stored {value:+05d} in memory[{operand}]")
-                self.user_input.clear()
-            else:
-                self.console_output.append("Error: Value out of range for READ instruction.")
-                return False
-        elif opcode == 11:  # WRITE
-            value = self.uvsim.memory.get_value(operand)
-            self.console_output.append(f"WRITE: Memory[{operand}] = {value:+05d}")
-        elif opcode == 20:  # LOAD
-            self.uvsim.accumulator = self.uvsim.memory.get_value(operand)
-            self.console_output.append(f"LOAD: Accumulator set to {self.uvsim.accumulator:+05d}")
-        elif opcode == 21:  # STORE
-            self.uvsim.memory.set_value(operand, self.uvsim.accumulator)
-            self.console_output.append(f"STORE: Memory[{operand}] set to {self.uvsim.accumulator:+05d}")
-        elif opcode == 30:  # ADD
-            val = self.uvsim.memory.get_value(operand)
-            self.uvsim.accumulator += val
-            self.console_output.append(f"ADD: Accumulator updated to {self.uvsim.accumulator:+05d}")
-        elif opcode == 31:  # SUBTRACT
-            val = self.uvsim.memory.get_value(operand)
-            self.uvsim.accumulator -= val
-            self.console_output.append(f"SUBTRACT: Accumulator updated to {self.uvsim.accumulator:+05d}")
-        elif opcode == 32:  # DIVIDE
-            val = self.uvsim.memory.get_value(operand)
-            if val == 0:
-                self.console_output.append("Error: Division by zero. Halting execution.")
-                return False
-            self.uvsim.accumulator //= val
-            self.console_output.append(f"DIVIDE: Accumulator updated to {self.uvsim.accumulator:+05d}")
-        elif opcode == 33:  # MULTIPLY
-            val = self.uvsim.memory.get_value(operand)
-            self.uvsim.accumulator *= val
-            self.console_output.append(f"MULTIPLY: Accumulator updated to {self.uvsim.accumulator:+05d}")
-        elif opcode == 40:  # BRANCH
-            self.console_output.append(f"BRANCH: Jumping to address {operand:02d}")
-            self.uvsim.program_counter = operand
-            self.update_memory_display()
-            return True  # Skip the normal increment below
-        elif opcode == 41:  # BRANCHNEG
-            if self.uvsim.accumulator < 0:
-                self.console_output.append(f"BRANCHNEG: Accumulator negative, jumping to address {operand:02d}")
-                self.uvsim.program_counter = operand
-                self.update_memory_display()
-                return True
-            else:
-                self.console_output.append("BRANCHNEG: Accumulator not negative, no branch.")
-        elif opcode == 42:  # BRANCHZERO
-            if self.uvsim.accumulator == 0:
-                self.console_output.append(f"BRANCHZERO: Accumulator zero, jumping to address {operand:02d}")
-                self.uvsim.program_counter = operand
-                self.update_memory_display()
-                return True
-            else:
-                self.console_output.append("BRANCHZERO: Accumulator not zero, no branch.")
-        elif opcode == 43:  # HALT
-            self.console_output.append("HALT: Program execution halted.")
-            self.uvsim.program_counter = 100  # force end
-            self.update_memory_display()
-            return False
+    
+    def read_user_input(self):
+        text_value = self.user_input.text().strip()
+        if text_value == "":
+            value, ok = QInputDialog.getInt(
+                self,
+                "Input Required",
+                "Enter an integer:",
+                0, -9999, 9999, 1
+            )
+            if not ok:
+                self.console_output.append("Error: Input cancelled.")
+                return None
         else:
-            self.console_output.append(f"Error: Unknown opcode {opcode}. Halting execution.")
-            return False
-        
-        self.uvsim.program_counter += 1
-        self.update_memory_display()
-        return True
+            try:
+                value = int(text_value)
+            except ValueError:
+                self.console_output.append("Error: Invalid integer input for READ.")
+                return None
+        return value
 
     def run_program(self):
         program = self.load_program_from_memory_labels()
@@ -347,19 +158,53 @@ class UVSimGUI(QWidget):
         execution_limit = 1000
         step_count = 0
         continue_exec = True
+
         while continue_exec and step_count < execution_limit:
-            continue_exec = self.execute_instruction()
+            # Get the current instruction for debugging purposes
+            instruction = self.uvsim.memory.get_value(self.uvsim.program_counter)
+            opcode = instruction // 100
+            operand = instruction % 100
+            self.console_output.append(f"Step {step_count + 1}: PC = {self.uvsim.program_counter:02d}, Opcode = {opcode}, Operand = {operand}")
+
+            # Handle READ instruction separately (requires user input)
+            if opcode == 10:
+                value = self.read_user_input()
+                if value is None:
+                    self.console_output.append("Error: No input provided for READ instruction.")
+                    break
+            else:
+                value = None
+
+            # Execute the instruction using the run() method
+            try:
+                message, continue_exec = self.uvsim.run(value)
+                self.console_output.append(message)
+            except Exception as e:
+                self.console_output.append(f"Error executing instruction: {str(e)}")
+                break
+
+            # Update the GUI display
+            self.update_memory_display()
+
+            # Increment step count
             step_count += 1
+
         if step_count >= execution_limit:
             self.console_output.append("Execution halted due to reaching execution limit.")
-        self.update_memory_display()
 
     def step_execution(self):
+        #Still broken. Work on more later
         self.console_output.append("Executing one step...")
         if self.uvsim.program_counter >= 100:
             self.console_output.append("Program counter out of range. Cannot step further.")
             return
-        self.execute_instruction()
+        
+        try:
+            message, continue_exec = self.uvsim.run()
+            self.console_output.append(message)
+            self.update_memory_display()
+        except Exception as e:
+            self.console_output.append(f"Error executing instruction: {str(e)}")
 
     def reset_simulator(self):
         self.console_output.clear()

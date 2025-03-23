@@ -3,10 +3,9 @@ class InputOutputOps:
         #Initialize the operations
         self.memory = memory
 
-    def read(self, address):
+    def read(self, address, value):
         #Read input from the keyboard and store it
         try:
-            value = int(input("Enter an integer: "))
             if not (-9999 <= value <= 9999):  # Validate input range
                 raise ValueError("Value must be a signed four-digit number (-9999 to +9999).")
             self.memory.set_value(address, value)
@@ -16,7 +15,7 @@ class InputOutputOps:
     def write(self, address):
         #Outputs the value of the specified address
         value = self.memory.get_value(address)
-        print(f"Contents of {address} is {value:+05d}")
+        return value
 
 class LoadStoreOps:
     def __init__(self, memory):
