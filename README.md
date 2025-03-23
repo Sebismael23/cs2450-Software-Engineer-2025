@@ -1,18 +1,18 @@
-UVSim README
+## UVSim README
 
 
-Introduction
+**Introduction**
 
 UVSim is a simple virtual machine for running programs written in BasicML, a basic machine language designed for educational purposes. The simulator allows users to enter and execute machine-level programs interactively.
 
 
-Prerequisites
+**Prerequisites**
 
 Python 3.x must be installed on your system.
 PyQt5 must also be installed.
 
 
-Installation
+**Installation**
 
 Clone or download the UVSim repository.
 
@@ -20,11 +20,11 @@ Ensure that all required files (UVSim.py, memory_structure.py, operations.py) ar
 
 Install PyQt5 using pip with the command below
 
-pip install PyQt5
+> pip install PyQt5
 
 
 
-How to Run
+**How to Run**
 
 Open a terminal or command prompt.
 
@@ -32,7 +32,7 @@ Navigate to the directory containing UVSim.py.
 
 Run the command:
 
-python uvsim_gui.py
+> python uvsim_gui.py
 
 The application will display the memory registers on the left hand side of the window.
 
@@ -49,7 +49,7 @@ Click the "Halt" button to stop the instructions from continuing.
 Click the "Reset" button to reset the memory.
 
 
-Basic Usage
+**Basic Usage**
 
 READ (10): Read a value from the keyboard into memory.
 
@@ -76,19 +76,31 @@ BRANCHZERO (42): Jump to a memory location if the accumulator is zero.
 HALT (43): Stop execution.
 
 
-Example Program
+**Example Program**
 
 Here is a simple example program that reads a number, stores it, and then writes it back to the screen:
 
-00 ? +1007 # READ input into memory[07] 01 ? +2107 # STORE value from accumulator into memory[07] 02 ? +1107 # WRITE value from memory[07] to screen 03 ? +4300 # HALT program execution
+00 ? +1007 *# READ input into memory[07]* 
+01 ? +2107 *# STORE value from accumulator into memory[07]* 
+02 ? +1107 *# WRITE value from memory[07] to screen* 
+03 ? +4300 *# HALT program execution*
 
+**Saving and Loading**
 
-Exiting UVSim
+To save a program that is already in memory, click the "Save Instructions" button. This will save the program into a .txt file to a location of your choice on your computer.
+
+To load a program, click on the "Load Instructions File" button. A file browser window will open. Navigate to the desired file and open it. This will load a previously saved program into the memory registers of the simulator.
+
+**Color Scheme**
+
+The simulator allows you to change the primary and secondary colors of the window. To do this, click on the "Configure Color Scheme" button at the bottom of the window. This will bring up a dialog box. Enter the color in hex code that you wish for the primary color to be, then click OK. The next box will ask you to do the same for the secondary color. After clicking OK for the second time, the color will update to your specifications.
+
+**Exiting UVSim**
 
 To exit the program, close the application window.
 
 
-Troubleshooting
+**Troubleshooting**
 
 Ensure you are using a valid BasicML instruction format (four-digit signed integers).
 
@@ -97,6 +109,7 @@ If a memory error occurs, check that you are not trying to access an out-of-rang
 If division by zero is attempted, an error message will be displayed, and execution will halt.
 
 
-Contact
+**Contact**
 
 For any issues or questions, please reach out to the development team.
+
