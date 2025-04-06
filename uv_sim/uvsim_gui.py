@@ -37,7 +37,7 @@ class UVSimGUI(QWidget):
         memory_container = QWidget()
         memory_layout = QVBoxLayout(memory_container)
         
-        for i in range(100):
+        for i in range(250):
             mem_label = QLineEdit("+000000")
             mem_label.setFixedWidth(80)
             memory_layout.addWidget(mem_label)
@@ -81,7 +81,7 @@ class UVSimGUI(QWidget):
         
         # Accumulator & Program Counter (Bottom Right)
         self.accumulator_label = QLabel("Accumulator: 0000")
-        self.program_counter_label = QLabel("Program Counter: 00")
+        self.program_counter_label = QLabel("Program Counter: 000")
         right_layout.addWidget(self.accumulator_label)
         right_layout.addWidget(self.program_counter_label)
         
@@ -107,8 +107,8 @@ class UVSimGUI(QWidget):
         self.color_scheme.configure_color_scheme(self, self.console_output)
 
     def update_memory_display(self):
-        for i in range(100):
-            self.memory_labels[i].setText(f"{self.uvsim.memory.get_value(i):+05d}")
+        for i in range(250):
+            self.memory_labels[i].setText(f"{self.uvsim.memory.get_value(i):+07}")
         self.accumulator_label.setText(f"Accumulator: {self.uvsim.accumulator:+05d}")
         self.program_counter_label.setText(f"Program Counter: {self.uvsim.program_counter:02d}")
     
