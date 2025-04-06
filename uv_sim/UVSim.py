@@ -108,10 +108,10 @@ if __name__ == "__main__":
             break
 
         try:
-            #Convert the input to an integer
+            # Convert the input to an integer
             instruction = int(user_input)
 
-            #Make sure the input is four digits
+            # Make sure the input is four digits
             if -9999 < instruction <= 9999:
                 program.append(instruction)
                 instruction_line += 1
@@ -122,5 +122,5 @@ if __name__ == "__main__":
             print("*** Error: Please enter an integer from -9999 to +9999 ***")
 
 
-    vm.load_program(program) #Load the program the user input into memory
-    vm.run() #Run the program in the virtual machine"
+    vm.load_program(program) # Load the program the user input into memory
+    vm.run() # Run the program in the virtual machine"

@@ -38,7 +38,7 @@ class UVSimGUI(QWidget):
         memory_layout = QVBoxLayout(memory_container)
         
         for i in range(100):
-            mem_label = QLineEdit("0000")
+            mem_label = QLineEdit("+000000")
             mem_label.setFixedWidth(80)
             memory_layout.addWidget(mem_label)
             self.memory_labels.append(mem_label)
