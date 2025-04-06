@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
 )
 from UVSim import UVSim
 from color_scheme import ColorScheme
+from file_functions import load_instruction_file, save_instruction_file
 
 class UVSimGUI(QWidget):
     def __init__(self):
@@ -111,8 +112,8 @@ class UVSimGUI(QWidget):
         self.step_button.clicked.connect(self.step_execution)
         self.reset_button.clicked.connect(self.reset_simulator)
         self.halt_button.clicked.connect(self.halt_execution)
-        self.load_file_button.clicked.connect(self.load_instruction_file)
-        self.save_file_button.clicked.connect(self.save_instruction_file)
+        self.load_file_button.clicked.connect(lambda: load_instruction_file(self))
+        self.save_file_button.clicked.connect(lambda: save_instruction_file(self))
     
     def configure_color_scheme(self):
         self.color_scheme.configure_color_scheme(self, self.console_output)
@@ -229,88 +230,6 @@ class UVSimGUI(QWidget):
         self.uvsim.program_counter = 250
         self.uvsim.control.halt()
         self.update_memory_display()
-
-    def load_instruction_file(self):
-        """Load instructions from a text file into memory."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Instructions File",
-            "",
-            "Text Files (*.txt);;All Files (*)"
-        )
-        
-        if not file_path:
-            return
-            
-        try:
-            with open(file_path, 'r') as file:
-                instructions = []
-                for line in file:
-                    # Remove any whitespace and comments
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        try:
-                            # Convert the instruction to an integer
-                            instruction = int(line)
-                            if -999999 <= instruction <= 999999:
-                                instructions.append(instruction)
-                            else:
-                                raise ValueError(f"Instruction {instruction} out of valid range (-999999 to 999999)")
-                        except ValueError as e:
-                            self.console_output.append(f"Error parsing instruction: {line}")
-                            return
-                
-                # Clear existing memory
-                for label in self.memory_labels:
-                    label.setText("000000")
-                
-                # Load the new instructions
-                for i, instruction in enumerate(instructions):
-                    if i < 250:  # Ensure we don't exceed memory size
-                        self.memory_labels[i].setText(f"{instruction:+07d}")
-                    else:
-                        self.console_output.append("Warning: Program exceeds memory size. Some instructions were not loaded.")
-                        break
-                
-                self.console_output.append(f"Successfully loaded {min(len(instructions), 250)} instructions from {os.path.basename(file_path)}")
-                
-        except Exception as e:
-            self.console_output.append(f"Error loading file: {str(e)}")
-
-    def save_instruction_file(self):
-        """Save the current memory contents to a text file."""
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Instructions File",
-            "",
-            "Text Files (*.txt);;All Files (*)"
-        )
-        
-        if not file_path:
-            return
-            
-        try:
-            with open(file_path, 'w') as file:
-                # Write a header comment
-                file.write("# UVSim Instructions File\n")
-                file.write("# Generated from memory contents\n\n")
-                
-                # Write all non-zero memory contents
-                instructions_written = 0
-                for i, label in enumerate(self.memory_labels):
-                    try:
-                        value = int(label.text())
-                        if value != 0:  # Only write non-zero values
-                            file.write(f"{value:+07d}\n")
-                            instructions_written += 1
-                    except ValueError:
-                        self.console_output.append(f"Warning: Invalid value in memory location {i}, skipping...")
-                        continue
-                
-                self.console_output.append(f"Successfully saved {instructions_written} instructions to {os.path.basename(file_path)}")
-                
-        except Exception as e:
-            self.console_output.append(f"Error saving file: {str(e)}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

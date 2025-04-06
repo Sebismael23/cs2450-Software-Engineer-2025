@@ -1,0 +1,57 @@
+010100
+010101
+020100
+030101
+021102
+020102
+032101
+021103
+020103
+033101
+021104
+020104
+041110
+020102
+011102
+040115
+020103
+011103
+040115
+020104
+011104
+043000 
+
+# Program Flow Explanation:
+# ------------------------
+# Memory Locations:
+# 100: First input number
+# 101: Second input number
+# 102: Result of addition
+# 103: Result of division
+# 104: Result of multiplication
+# 110: Branch target for negative check
+# 115: Branch target for program end
+
+# Step-by-Step Execution:
+# 1. READ first number into memory location 100
+# 2. READ second number into memory location 101
+# 3. LOAD first number from memory 100 into accumulator
+# 4. ADD second number from memory 101 to accumulator
+# 5. STORE result in memory location 102
+# 6. LOAD addition result from memory 102 into accumulator
+# 7. DIVIDE by second number from memory 101
+# 8. STORE division result in memory location 103
+# 9. LOAD division result from memory 103 into accumulator
+# 10. MULTIPLY by second number from memory 101
+# 11. STORE multiplication result in memory location 104
+# 12. LOAD multiplication result from memory 104 into accumulator
+# 13. BRANCHNEG to memory 110 if result is negative
+# 14. LOAD addition result from memory 102 into accumulator
+# 15. WRITE addition result to screen
+# 16. BRANCH to memory 115
+# 17. LOAD division result from memory 103 into accumulator
+# 18. WRITE division result to screen
+# 19. BRANCH to memory 115
+# 20. LOAD multiplication result from memory 104 into accumulator
+# 21. WRITE multiplication result to screen
+# 22. HALT program 
