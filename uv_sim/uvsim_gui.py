@@ -38,9 +38,21 @@ class UVSimGUI(QWidget):
         memory_layout = QVBoxLayout(memory_container)
         
         for i in range(250):
+            # Create a horizontal layout for each memory location
+            mem_row_layout = QHBoxLayout()
+            
+            # Add address label
+            addr_label = QLabel(f"{i:03d}:")
+            addr_label.setFixedWidth(40)
+            mem_row_layout.addWidget(addr_label)
+            
+            # Add memory value QLineEdit
             mem_label = QLineEdit("+000000")
             mem_label.setFixedWidth(80)
-            memory_layout.addWidget(mem_label)
+            mem_row_layout.addWidget(mem_label)
+            
+            # Add the row layout to the memory container
+            memory_layout.addLayout(mem_row_layout)
             self.memory_labels.append(mem_label)
         
         scroll_area = QScrollArea()
