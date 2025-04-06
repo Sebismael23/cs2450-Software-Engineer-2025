@@ -19,8 +19,8 @@ class UVSim:
 
     def run(self, value=None):
         self.instruction_register = self.memory.get_value(self.program_counter)
-        self.opcode = self.instruction_register // 100
-        self.operand = self.instruction_register % 100
+        self.opcode = self.instruction_register // 1000
+        self.operand = self.instruction_register % 1000
 
         if self.opcode == 0:  # Handle invalid or empty instruction
             raise ValueError("Invalid or empty instruction.")
@@ -96,13 +96,13 @@ if __name__ == "__main__":
     program = [] #Create an empty list to contain the instructions the user will input
     instruction_line = 0 #Instructions begin at line zero
     
-    #User types in the program until they input -99999
+    #User types in the program until they input -999999
     while True:
         #User inputs instructions
         user_input = input(f"{instruction_line:02d} ? ").strip()
 
-        #Check if the value was -99999 and the program input ends
-        if user_input == "-99999":
+        #Check if the value was -999999 and the program input ends
+        if user_input == "-999999":
             print("*** Program loading complete ***")
             print("*** Program executuion begins ***")
             break
@@ -111,15 +111,15 @@ if __name__ == "__main__":
             # Convert the input to an integer
             instruction = int(user_input)
 
-            # Make sure the input is four digits
-            if -9999 < instruction <= 9999:
+            # Make sure the input is six digits
+            if -999999 <= instruction <= 999999:
                 program.append(instruction)
                 instruction_line += 1
             else:
-                print("Error: Please enter a signed four digit number from -9999 to +9999 ***")
+                print("Error: Please enter a signed six digit number from -999999 to +999999 ***")
 
         except ValueError:
-            print("*** Error: Please enter an integer from -9999 to +9999 ***")
+            print("*** Error: Please enter an integer from -999999 to +999999 ***")
 
 
     vm.load_program(program) # Load the program the user input into memory

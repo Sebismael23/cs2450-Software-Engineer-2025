@@ -58,7 +58,6 @@ class UVSimGUI(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(memory_container)
-        scroll_area.setFixedHeight(1100)
         left_layout.addWidget(scroll_area)
         
         # User Input Section (Top Right)
@@ -127,10 +126,10 @@ class UVSimGUI(QWidget):
     def load_program_from_memory_labels(self):
         self.console_output.append("Loading program into memory...")
         program = []
-        for i in range(100):
+        for i in range(250):
             try:
                 instruction = int(self.memory_labels[i].text())
-                if -9999 <= instruction <= 9999:
+                if -999999 <= instruction <= 999999:
                     program.append(instruction)
                 else:
                     self.console_output.append(f"Error: Invalid instruction at memory[{i}]: {instruction}")
@@ -147,7 +146,7 @@ class UVSimGUI(QWidget):
                 self,
                 "Input Required",
                 "Enter an integer:",
-                0, -9999, 9999, 1
+                0, -999999, 999999, 1
             )
             if not ok:
                 self.console_output.append("Error: Input cancelled.")
@@ -174,9 +173,10 @@ class UVSimGUI(QWidget):
         while continue_exec and step_count < execution_limit:
             # Get the current instruction for debugging purposes
             instruction = self.uvsim.memory.get_value(self.uvsim.program_counter)
-            opcode = instruction // 100
-            operand = instruction % 100
-            self.console_output.append(f"Step {step_count + 1}: PC = {self.uvsim.program_counter:02d}, Opcode = {opcode}, Operand = {operand}")
+            # Updated to handle 6-digit words: first 3 digits are opcode, last 3 are operand
+            opcode = instruction // 1000
+            operand = instruction % 1000
+            self.console_output.append(f"Step {step_count + 1}: PC = {self.uvsim.program_counter:03d}, Opcode = {opcode}, Operand = {operand}")
 
             # Handle READ instruction separately (requires user input)
             if opcode == 10:
@@ -207,7 +207,7 @@ class UVSimGUI(QWidget):
     def step_execution(self):
         #Still broken. Work on more later
         self.console_output.append("Executing one step...")
-        if self.uvsim.program_counter >= 100:
+        if self.uvsim.program_counter >= 250:
             self.console_output.append("Program counter out of range. Cannot step further.")
             return
         
@@ -226,7 +226,7 @@ class UVSimGUI(QWidget):
     
     def halt_execution(self):
         self.console_output.append("Program halted by user.")
-        self.uvsim.program_counter = 100
+        self.uvsim.program_counter = 250
         self.uvsim.control.halt()
         self.update_memory_display()
 
@@ -252,27 +252,27 @@ class UVSimGUI(QWidget):
                         try:
                             # Convert the instruction to an integer
                             instruction = int(line)
-                            if -9999 <= instruction <= 9999:
+                            if -999999 <= instruction <= 999999:
                                 instructions.append(instruction)
                             else:
-                                raise ValueError(f"Instruction {instruction} out of valid range (-9999 to 9999)")
+                                raise ValueError(f"Instruction {instruction} out of valid range (-999999 to 999999)")
                         except ValueError as e:
                             self.console_output.append(f"Error parsing instruction: {line}")
                             return
                 
                 # Clear existing memory
                 for label in self.memory_labels:
-                    label.setText("0000")
+                    label.setText("000000")
                 
                 # Load the new instructions
                 for i, instruction in enumerate(instructions):
-                    if i < 100:  # Ensure we don't exceed memory size
-                        self.memory_labels[i].setText(f"{instruction:+05d}")
+                    if i < 250:  # Ensure we don't exceed memory size
+                        self.memory_labels[i].setText(f"{instruction:+07d}")
                     else:
                         self.console_output.append("Warning: Program exceeds memory size. Some instructions were not loaded.")
                         break
                 
-                self.console_output.append(f"Successfully loaded {min(len(instructions), 100)} instructions from {os.path.basename(file_path)}")
+                self.console_output.append(f"Successfully loaded {min(len(instructions), 250)} instructions from {os.path.basename(file_path)}")
                 
         except Exception as e:
             self.console_output.append(f"Error loading file: {str(e)}")
@@ -301,7 +301,7 @@ class UVSimGUI(QWidget):
                     try:
                         value = int(label.text())
                         if value != 0:  # Only write non-zero values
-                            file.write(f"{value:+05d}\n")
+                            file.write(f"{value:+07d}\n")
                             instructions_written += 1
                     except ValueError:
                         self.console_output.append(f"Warning: Invalid value in memory location {i}, skipping...")
