@@ -17,8 +17,6 @@ class UVSim:
     def load_program(self, program):
         self.memory.load_program(program)
 
-
-
     def run(self, value=None):
         self.instruction_register = self.memory.get_value(self.program_counter)
         self.opcode = self.instruction_register // 100
