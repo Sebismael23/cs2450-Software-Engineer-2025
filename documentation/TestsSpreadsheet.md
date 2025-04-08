@@ -1,4 +1,3 @@
-# UVSim Unit Tests
 # UVSim Unit Tests Based on Use Cases
 
 | Test Name                               | Description                                             | Use Case Reference | Inputs                                    | Expected Outputs                                              | Success Criteria                                                    |

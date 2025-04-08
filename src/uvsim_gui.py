@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
 )
 from UVSim import UVSim
 from color_scheme import ColorScheme
+from file_functions import load_instruction_file, save_instruction_file
 
 class UVSimGUI(QWidget):
     def __init__(self):
@@ -37,16 +38,27 @@ class UVSimGUI(QWidget):
         memory_container = QWidget()
         memory_layout = QVBoxLayout(memory_container)
         
-        for i in range(100):
-            mem_label = QLineEdit("0000")
+        for i in range(250):
+            # Create a horizontal layout for each memory location
+            mem_row_layout = QHBoxLayout()
+            
+            # Add address label
+            addr_label = QLabel(f"{i:03d}:")
+            addr_label.setFixedWidth(40)
+            mem_row_layout.addWidget(addr_label)
+            
+            # Add memory value QLineEdit
+            mem_label = QLineEdit("+000000")
             mem_label.setFixedWidth(80)
-            memory_layout.addWidget(mem_label)
+            mem_row_layout.addWidget(mem_label)
+            
+            # Add the row layout to the memory container
+            memory_layout.addLayout(mem_row_layout)
             self.memory_labels.append(mem_label)
         
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(memory_container)
-        scroll_area.setFixedHeight(1100)
         left_layout.addWidget(scroll_area)
         
         # User Input Section (Top Right)
@@ -81,7 +93,7 @@ class UVSimGUI(QWidget):
         
         # Accumulator & Program Counter (Bottom Right)
         self.accumulator_label = QLabel("Accumulator: 0000")
-        self.program_counter_label = QLabel("Program Counter: 00")
+        self.program_counter_label = QLabel("Program Counter: 000")
         right_layout.addWidget(self.accumulator_label)
         right_layout.addWidget(self.program_counter_label)
         
@@ -100,25 +112,25 @@ class UVSimGUI(QWidget):
         self.step_button.clicked.connect(self.step_execution)
         self.reset_button.clicked.connect(self.reset_simulator)
         self.halt_button.clicked.connect(self.halt_execution)
-        self.load_file_button.clicked.connect(self.load_instruction_file)
-        self.save_file_button.clicked.connect(self.save_instruction_file)
+        self.load_file_button.clicked.connect(lambda: load_instruction_file(self))
+        self.save_file_button.clicked.connect(lambda: save_instruction_file(self))
     
     def configure_color_scheme(self):
         self.color_scheme.configure_color_scheme(self, self.console_output)
 
     def update_memory_display(self):
-        for i in range(100):
-            self.memory_labels[i].setText(f"{self.uvsim.memory.get_value(i):+05d}")
+        for i in range(250):
+            self.memory_labels[i].setText(f"{self.uvsim.memory.get_value(i):+07}")
         self.accumulator_label.setText(f"Accumulator: {self.uvsim.accumulator:+05d}")
         self.program_counter_label.setText(f"Program Counter: {self.uvsim.program_counter:02d}")
     
     def load_program_from_memory_labels(self):
         self.console_output.append("Loading program into memory...")
         program = []
-        for i in range(100):
+        for i in range(250):
             try:
                 instruction = int(self.memory_labels[i].text())
-                if -9999 <= instruction <= 9999:
+                if -999999 <= instruction <= 999999:
                     program.append(instruction)
                 else:
                     self.console_output.append(f"Error: Invalid instruction at memory[{i}]: {instruction}")
@@ -135,7 +147,7 @@ class UVSimGUI(QWidget):
                 self,
                 "Input Required",
                 "Enter an integer:",
-                0, -9999, 9999, 1
+                0, -999999, 999999, 1
             )
             if not ok:
                 self.console_output.append("Error: Input cancelled.")
@@ -162,9 +174,10 @@ class UVSimGUI(QWidget):
         while continue_exec and step_count < execution_limit:
             # Get the current instruction for debugging purposes
             instruction = self.uvsim.memory.get_value(self.uvsim.program_counter)
-            opcode = instruction // 100
-            operand = instruction % 100
-            self.console_output.append(f"Step {step_count + 1}: PC = {self.uvsim.program_counter:02d}, Opcode = {opcode}, Operand = {operand}")
+            # Updated to handle 6-digit words: first 3 digits are opcode, last 3 are operand
+            opcode = instruction // 1000
+            operand = instruction % 1000
+            self.console_output.append(f"Step {step_count + 1}: PC = {self.uvsim.program_counter:03d}, Opcode = {opcode}, Operand = {operand}")
 
             # Handle READ instruction separately (requires user input)
             if opcode == 10:
@@ -195,7 +208,7 @@ class UVSimGUI(QWidget):
     def step_execution(self):
         #Still broken. Work on more later
         self.console_output.append("Executing one step...")
-        if self.uvsim.program_counter >= 100:
+        if self.uvsim.program_counter >= 250:
             self.console_output.append("Program counter out of range. Cannot step further.")
             return
         
@@ -214,91 +227,9 @@ class UVSimGUI(QWidget):
     
     def halt_execution(self):
         self.console_output.append("Program halted by user.")
-        self.uvsim.program_counter = 100
+        self.uvsim.program_counter = 250
         self.uvsim.control.halt()
         self.update_memory_display()
-
-    def load_instruction_file(self):
-        """Load instructions from a text file into memory."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Instructions File",
-            "",
-            "Text Files (*.txt);;All Files (*)"
-        )
-        
-        if not file_path:
-            return
-            
-        try:
-            with open(file_path, 'r') as file:
-                instructions = []
-                for line in file:
-                    # Remove any whitespace and comments
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        try:
-                            # Convert the instruction to an integer
-                            instruction = int(line)
-                            if -9999 <= instruction <= 9999:
-                                instructions.append(instruction)
-                            else:
-                                raise ValueError(f"Instruction {instruction} out of valid range (-9999 to 9999)")
-                        except ValueError as e:
-                            self.console_output.append(f"Error parsing instruction: {line}")
-                            return
-                
-                # Clear existing memory
-                for label in self.memory_labels:
-                    label.setText("0000")
-                
-                # Load the new instructions
-                for i, instruction in enumerate(instructions):
-                    if i < 100:  # Ensure we don't exceed memory size
-                        self.memory_labels[i].setText(f"{instruction:+05d}")
-                    else:
-                        self.console_output.append("Warning: Program exceeds memory size. Some instructions were not loaded.")
-                        break
-                
-                self.console_output.append(f"Successfully loaded {min(len(instructions), 100)} instructions from {os.path.basename(file_path)}")
-                
-        except Exception as e:
-            self.console_output.append(f"Error loading file: {str(e)}")
-
-    def save_instruction_file(self):
-        """Save the current memory contents to a text file."""
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Instructions File",
-            "",
-            "Text Files (*.txt);;All Files (*)"
-        )
-        
-        if not file_path:
-            return
-            
-        try:
-            with open(file_path, 'w') as file:
-                # Write a header comment
-                file.write("# UVSim Instructions File\n")
-                file.write("# Generated from memory contents\n\n")
-                
-                # Write all non-zero memory contents
-                instructions_written = 0
-                for i, label in enumerate(self.memory_labels):
-                    try:
-                        value = int(label.text())
-                        if value != 0:  # Only write non-zero values
-                            file.write(f"{value:+05d}\n")
-                            instructions_written += 1
-                    except ValueError:
-                        self.console_output.append(f"Warning: Invalid value in memory location {i}, skipping...")
-                        continue
-                
-                self.console_output.append(f"Successfully saved {instructions_written} instructions to {os.path.basename(file_path)}")
-                
-        except Exception as e:
-            self.console_output.append(f"Error saving file: {str(e)}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
