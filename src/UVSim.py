@@ -1,6 +1,8 @@
 from memory_structure import UVSimMemory
 from operations import InputOutputOps, LoadStoreOps, ArithmeticOps, ControlOps
 
+# Updates to UVSim class to support both 4-digit and 6-digit formats
+
 class UVSim:
     def __init__(self):
         self.memory = UVSimMemory()
@@ -13,14 +15,43 @@ class UVSim:
         self.instruction_register = 0
         self.opcode = 0
         self.operand = 0
+        self.format = "6-digit"  # Default to new format
+
+    def set_format(self, format_type):
+        """Set the instruction format to '4-digit' or '6-digit'"""
+        if format_type in ["4-digit", "6-digit"]:
+            self.format = format_type
+        else:
+            raise ValueError("Format must be either '4-digit' or '6-digit'")
 
     def load_program(self, program):
         self.memory.load_program(program)
+        
+        # Try to detect format if not already set
+        if len(program) > 0:
+            # Check if any instruction exceeds 4-digit range
+            if any(abs(instr) > 9999 for instr in program):
+                self.format = "6-digit"
+            else:
+                # Check opcode range (in 6-digit, opcodes can be 10-43)
+                # In 4-digit, they'd be represented as 10-43 in the tens/hundreds place
+                has_6digit_opcode = any((instr // 1000) in range(10, 44) for instr in program)
+                if has_6digit_opcode:
+                    self.format = "6-digit"
+                else:
+                    self.format = "4-digit"
 
     def run(self, value=None):
-        self.instruction_register = self.memory.get_value(self.program_counter)
-        self.opcode = self.instruction_register // 1000
-        self.operand = self.instruction_register % 1000
+        if not hasattr(self, 'opcode') or not hasattr(self, 'operand'):
+            self.instruction_register = self.memory.get_value(self.program_counter)
+            
+            # Parse opcode and operand based on format
+            if self.format == "4-digit":
+                self.opcode = self.instruction_register // 100
+                self.operand = self.instruction_register % 100
+            else:  # 6-digit
+                self.opcode = self.instruction_register // 1000
+                self.operand = self.instruction_register % 1000
 
         if self.opcode == 0:  # Handle invalid or empty instruction
             raise ValueError("Invalid or empty instruction.")
@@ -81,7 +112,7 @@ class UVSim:
             return "HALT: Program execution halted.", False
         else:
             raise ValueError(f"Unknown opcode: {self.opcode}")
-    
+            
 if __name__ == "__main__":
     #Displays welcome message
     print("*** Welcome to UVSIM! ***")

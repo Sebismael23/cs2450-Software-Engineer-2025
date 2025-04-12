@@ -12,6 +12,7 @@ class UVSimTab(QWidget):
         self.uvsim = UVSim()
         self.color_scheme = color_scheme
         self.file_path = None  # Track associated file
+        self.file_format = "6-digit"  # Default to new format
         self.initUI()
         self.color_scheme.apply_color_scheme(self)
 
@@ -98,26 +99,54 @@ class UVSimTab(QWidget):
             self.console_output.append(f"Saved file: {self.file_path}")
 
     def update_memory_display(self):
-        for i in range(min(100, len(self.memory_labels))):  # Limit to UVSim memory size
-            self.memory_labels[i].setText(f"{self.uvsim.memory.get_value(i):+07d}")
+        if not hasattr(self, 'file_format'):
+            self.file_format = "6-digit"  # Default to new format
+            
+        for i in range(min(250, len(self.memory_labels))):  # Updated to support 250 memory locations
+            value = self.uvsim.memory.get_value(i)
+            if self.file_format == "4-digit":
+                self.memory_labels[i].setText(f"{value:+05d}")
+            else:  # 6-digit
+                self.memory_labels[i].setText(f"{value:+07d}")
+                
         self.accumulator_label.setText(f"Accumulator: {self.uvsim.accumulator:+05d}")
         self.program_counter_label.setText(f"Program Counter: {self.uvsim.program_counter:03d}")
-
+        
     def load_program_from_memory_labels(self):
         self.console_output.append("Loading program into memory...")
         program = []
-        for i in range(100):  # UVSim memory size
+        
+        # Check if format is alredy determind
+        if not hasattr(self, 'file_format'):
+            self.file_format = "6-digit"  # Default to new format
+        
+        for i in range(250):  # UVSim memory size
             try:
                 instruction = int(self.memory_labels[i].text())
-                if -999999 <= instruction <= 999999:
-                    program.append(instruction)
-                else:
-                    self.console_output.append(f"Error: Invalid instruction at memory[{i}]: {instruction}")
-                    return None
+                if instruction == 0:
+                    program.append(0)  # Add zero instructions
+                    continue
+                    
+                # Validate against the current format
+                if self.file_format == "4-digit":
+                    if -9999 <= instruction <= 9999:
+                        program.append(instruction)
+                    else:
+                        self.console_output.append(f"Error: Invalid 4-digit instruction at memory[{i}]: {instruction}")
+                        return None
+                else:  # 6-digit
+                    if -999999 <= instruction <= 999999:
+                        program.append(instruction)
+                    else:
+                        self.console_output.append(f"Error: Invalid 6-digit instruction at memory[{i}]: {instruction}")
+                        return None
             except ValueError:
                 self.console_output.append(f"Error: Non-numeric value in memory[{i}]")
                 return None
+        
+        self.console_output.append(f"Program loaded in {self.file_format} format")
         return program
+
 
     def read_user_input(self):
         text_value = self.user_input.text().strip()
@@ -141,8 +170,10 @@ class UVSimTab(QWidget):
         program = self.load_program_from_memory_labels()
         if program is None:
             return
+            
+        # Modify the instruction parsing based on format
         self.uvsim.load_program(program)
-        self.console_output.append("Program loaded. Running program...")
+        self.console_output.append(f"Program loaded in {self.file_format} format. Running program...")
 
         execution_limit = 1000
         step_count = 0
@@ -150,8 +181,15 @@ class UVSimTab(QWidget):
 
         while continue_exec and step_count < execution_limit:
             instruction = self.uvsim.memory.get_value(self.uvsim.program_counter)
-            opcode = instruction // 100
-            operand = instruction % 100
+            
+            # Parse opcode and operand differently based on format
+            if self.file_format == "4-digit":
+                opcode = instruction // 100
+                operand = instruction % 100
+            else:  # 6-digit
+                opcode = instruction // 1000
+                operand = instruction % 1000
+                
             self.console_output.append(f"Step {step_count + 1}: PC = {self.uvsim.program_counter:03d}, Opcode = {opcode}, Operand = {operand}")
 
             if opcode == 10:
@@ -168,7 +206,8 @@ class UVSimTab(QWidget):
                     self.console_output.append("HALT instruction encountered.")
                     continue_exec = False
                 elif opcode in [10, 11, 20, 21, 30, 31, 32, 33, 40, 41, 42]:
-                    self.uvsim.run()
+                    result, continue_exec = self.uvsim.run(value=None)
+                    self.console_output.append(result)
                 else:
                     self.console_output.append(f"Unknown opcode: {opcode}")
                     break
@@ -182,16 +221,25 @@ class UVSimTab(QWidget):
         if step_count >= execution_limit:
             self.console_output.append("Execution halted due to reaching execution limit.")
 
+
     def step_execution(self):
         self.console_output.append("Executing one step...")
-        if self.uvsim.program_counter >= 100:
+        if self.uvsim.program_counter >= 250:
             self.console_output.append("Program counter out of range. Cannot step further.")
             return
         try:
             instruction = self.uvsim.memory.get_value(self.uvsim.program_counter)
-            opcode = instruction // 100
-            operand = instruction % 100
+            
+            # Parse opcode and operand based on format
+            if self.file_format == "4-digit":
+                opcode = instruction // 100
+                operand = instruction % 100
+            else:  # 6-digit
+                opcode = instruction // 1000
+                operand = instruction % 1000
+                
             self.console_output.append(f"Step: PC = {self.uvsim.program_counter:03d}, Opcode = {opcode}, Operand = {operand}")
+            
             if opcode == 10:
                 value = self.read_user_input()
                 if value is None:
@@ -204,13 +252,14 @@ class UVSimTab(QWidget):
             if opcode == 43:
                 self.console_output.append("HALT instruction encountered.")
             elif opcode in [10, 11, 20, 21, 30, 31, 32, 33, 40, 41, 42]:
-                self.uvsim.run()
+                result, continue_exec = self.uvsim.run(value=None)
+                self.console_output.append(result)
             else:
                 self.console_output.append(f"Unknown opcode: {opcode}")
             self.update_memory_display()
         except Exception as e:
             self.console_output.append(f"Error executing instruction: {str(e)}")
-
+        
     def reset_simulator(self):
         self.console_output.clear()
         self.console_output.append("Simulator reset.")
