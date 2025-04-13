@@ -29,10 +29,10 @@ class UVSimTab(QWidget):
         for i in range(250):
             mem_row_layout = QHBoxLayout()
             addr_label = QLabel(f"{i:03d}:")
-            addr_label.setFixedWidth(40)
+            addr_label.setFixedWidth(65)
             mem_row_layout.addWidget(addr_label)
             mem_label = QLineEdit("+000000")
-            mem_label.setFixedWidth(80)
+            mem_label.setFixedWidth(150)
             mem_row_layout.addWidget(mem_label)
             memory_layout.addLayout(mem_row_layout)
             self.memory_labels.append(mem_label)
@@ -40,10 +40,12 @@ class UVSimTab(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(memory_container)
+        scroll_area.setMinimumWidth(250)
         left_layout.addWidget(scroll_area)
 
         # User Input
         self.user_input = QLineEdit()
+        self.user_input.setMinimumWidth(200)
         right_layout.addWidget(QLabel("User Input (for READ instructions):"))
         right_layout.addWidget(self.user_input)
 
@@ -76,8 +78,8 @@ class UVSimTab(QWidget):
         right_layout.addWidget(self.accumulator_label)
         right_layout.addWidget(self.program_counter_label)
 
-        main_layout.addLayout(left_layout, 1)
-        main_layout.addLayout(right_layout, 2)
+        main_layout.addLayout(left_layout, 2)
+        main_layout.addLayout(right_layout, 3)
         self.setLayout(main_layout)
 
         # Connect buttons
@@ -192,30 +194,27 @@ class UVSimTab(QWidget):
                 
             self.console_output.append(f"Step {step_count + 1}: PC = {self.uvsim.program_counter:03d}, Opcode = {opcode}, Operand = {operand}")
 
+            # Handle READ instruction separately (requires user input)
             if opcode == 10:
                 value = self.read_user_input()
                 if value is None:
                     self.console_output.append("Error: No input provided for READ instruction.")
                     break
-                self.uvsim.memory.set_value(operand, value)
+            else:
+                value = None
+
+            # Execute the instruction using the run() method
             try:
-                self.uvsim.instruction_register = instruction
-                self.uvsim.opcode = opcode
-                self.uvsim.operand = operand
-                if opcode == 43:
-                    self.console_output.append("HALT instruction encountered.")
-                    continue_exec = False
-                elif opcode in [10, 11, 20, 21, 30, 31, 32, 33, 40, 41, 42]:
-                    result, continue_exec = self.uvsim.run(value=None)
-                    self.console_output.append(result)
-                else:
-                    self.console_output.append(f"Unknown opcode: {opcode}")
-                    break
+                message, continue_exec = self.uvsim.run(value)
+                self.console_output.append(message)
             except Exception as e:
                 self.console_output.append(f"Error executing instruction: {str(e)}")
                 break
 
+            # Update the GUI display
             self.update_memory_display()
+
+            # Increment step count
             step_count += 1
 
         if step_count >= execution_limit:
