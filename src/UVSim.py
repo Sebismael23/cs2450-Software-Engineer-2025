@@ -41,20 +41,25 @@ class UVSim:
                 else:
                     self.format = "4-digit"
 
-    def run(self, value=None):
-        if not hasattr(self, 'opcode') or not hasattr(self, 'operand'):
-            self.instruction_register = self.memory.get_value(self.program_counter)
-            
-            # Parse opcode and operand based on format
-            if self.format == "4-digit":
-                self.opcode = self.instruction_register // 100
-                self.operand = self.instruction_register % 100
-            else:  # 6-digit
-                self.opcode = self.instruction_register // 1000
-                self.operand = self.instruction_register % 1000
 
-        if self.opcode == 0:  # Handle invalid or empty instruction
-            raise ValueError("Invalid or empty instruction.")
+
+
+    def run(self, value=None):
+        self.instruction_register = self.memory.get_value(self.program_counter)
+        
+        if self.instruction_register == 0:
+            raise ValueError("Empty instruction (0) encountered")
+            
+        if self.format == "4-digit":
+            self.opcode = self.instruction_register // 100
+            self.operand = self.instruction_register % 100
+        else:  # 6-digit
+            self.opcode = self.instruction_register // 1000
+            self.operand = self.instruction_register % 1000
+
+        # Validation
+        if self.opcode == 0 and self.instruction_register != 0:
+            raise ValueError(f"Instruction parsing failed. Raw: {self.instruction_register}, Format: {self.format}")
 
         if self.opcode == 10:  # READ - Read a word from the keyboard into a location in memory
             if value is None:
