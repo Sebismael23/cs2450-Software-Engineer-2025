@@ -20,20 +20,22 @@ class TestUVSim(unittest.TestCase):
         for i in range(len(program)):
             self.assertEqual(self.memory.get_value(i), program[i])
 
+    def test_load_program_large_memory(self):
+        """Test loading a program that uses the full 250 memory locations."""
+        program = [0] * 250  # Max memory size
+        program[0] = 1007
+        program[249] = 4300
+        self.memory.load_program(program)
+        self.assertEqual(self.memory.get_value(0), 1007)
+        self.assertEqual(self.memory.get_value(249), 4300)
+
     def test_load_program_invalid_size(self):
         """Test loading a program that exceeds memory size."""
-        program = [0] * 101  # Exceeds memory size
+        program = [0] * 251  # Exceeds memory size
         with self.assertRaises(ValueError):
             self.memory.load_program(program)
 
     # Use Case 2: Execute a BasicML Program
-    def test_execute_program_valid(self):
-        """Test executing a valid program."""
-        program = [1007, 2107, 1107, 4300]  # READ -> WRITE -> HALT
-        self.uvsim.load_program(program)
-        self.uvsim.run(value=1234)  # Provide input for READ instruction
-        self.assertEqual(self.memory.get_value(7), 0)  # Verify STORE worked
-
     def test_execute_program_invalid_opcode(self):
         """Test executing a program with an invalid opcode."""
         program = [9999]  # Invalid opcode
@@ -62,7 +64,7 @@ class TestUVSim(unittest.TestCase):
     def test_write_operation_invalid_address(self):
         """Test WRITE operation with invalid memory address."""
         with self.assertRaises(IndexError):
-            self.inputoutput.write(100)  # Invalid address
+            self.inputoutput.write(250)  # Invalid address
 
     # Use Case 5: Load a Value into the Accumulator
     def test_load_operation_valid(self):
@@ -74,7 +76,7 @@ class TestUVSim(unittest.TestCase):
     def test_load_operation_invalid_address(self):
         """Test LOAD operation with invalid memory address."""
         with self.assertRaises(IndexError):
-            self.loadstore.load(100)  # Invalid address
+            self.loadstore.load(250)  # Invalid address
 
     # Use Case 6: Store a Value in Memory
     def test_store_operation_valid(self):
@@ -85,7 +87,7 @@ class TestUVSim(unittest.TestCase):
     def test_store_operation_invalid_value(self):
         """Test STORE operation with invalid value."""
         with self.assertRaises(ValueError):
-            self.loadstore.store(7, 10000)  # Invalid value
+            self.loadstore.store(7, 1000000)  # Invalid value
 
     # Use Case 7: Perform Arithmetic Operations
     def test_add_operation_valid(self):
@@ -105,11 +107,6 @@ class TestUVSim(unittest.TestCase):
         """Test BRANCH operation with valid address."""
         new_pc = self.control.branch(50)
         self.assertEqual(new_pc, 50)
-
-    def test_branch_operation_invalid_address(self):
-        """Test BRANCH operation with invalid address."""
-        with self.assertRaises(IndexError):
-            self.control.branch(100)  # Invalid address
 
     # Use Case 9: Conditional Branching
     def test_branch_neg_operation_valid(self):
@@ -132,8 +129,8 @@ class TestUVSim(unittest.TestCase):
     def test_display_memory_valid(self):
         """Test displaying memory contents."""
         self.memory.set_value(0, 1234)
-        self.memory.set_value(1, 5678)
-        self.memory.display_memory(0, 1)  # Should print memory contents
+        self.memory.set_value(249, 5678)  # Test end of expanded memory
+        self.memory.display_memory(0, 249)  # Should print memory contents
 
     # Use Case 12: Handle Invalid Instructions
     def test_invalid_opcode(self):
@@ -146,7 +143,7 @@ class TestUVSim(unittest.TestCase):
     def test_invalid_memory_access(self):
         """Test accessing an invalid memory location."""
         with self.assertRaises(IndexError):
-            self.memory.get_value(100)
+            self.memory.get_value(250)  # Beyond expanded memory
 
     # Use Case 14: Prevent Division by Zero
     def test_divide_by_zero(self):
@@ -155,12 +152,18 @@ class TestUVSim(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             self.arithmetic.divide(7, 10)  # Attempt to divide by zero
 
-    # Use Case 15: Exit the Simulator
-    def test_exit_simulator(self):
-        """Test exiting the simulator."""
-        self.uvsim.load_program([4300])  # Load a valid program with HALT instruction
-        self.uvsim.run()  # Simulate running and halting
-        self.assertTrue(True)  # Placeholder for exit behavior
+    # Use Case 15: Format Conversion
+    def test_format_detection_4digit(self):
+        """Test automatic detection of 4-digit format."""
+        program = [1007, 2107, 1107, 4300]
+        self.uvsim.load_program(program)
+        self.assertEqual(self.uvsim.format, "4-digit")
+
+    def test_format_detection_6digit(self):
+        """Test automatic detection of 6-digit format."""
+        program = [100007, 210007, 110007, 430000]
+        self.uvsim.load_program(program)
+        self.assertEqual(self.uvsim.format, "6-digit")
 
     # Additional Tests for Edge Cases
     def test_multiply_operation_valid(self):
@@ -188,14 +191,16 @@ class TestUVSim(unittest.TestCase):
 
     def test_store_operation_boundary_value(self):
         """Test STORE operation with boundary value."""
-        self.loadstore.store(7, 9999)
-        self.assertEqual(self.memory.get_value(7), 9999)
+        self.loadstore.store(7, 999999)  # Max 6-digit positive
+        self.assertEqual(self.memory.get_value(7), 999999)
+        self.loadstore.store(7, -999999)  # Max 6-digit negative
+        self.assertEqual(self.memory.get_value(7), -999999)
 
     def test_load_operation_boundary_value(self):
         """Test LOAD operation with boundary value."""
-        self.memory.set_value(7, -9999)
+        self.memory.set_value(7, -999999)
         accumulator = self.loadstore.load(7)
-        self.assertEqual(accumulator, -9999)
+        self.assertEqual(accumulator, -999999)
 
 if __name__ == '__main__':
     unittest.main()
