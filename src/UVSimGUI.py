@@ -15,7 +15,7 @@ class UVSimGUI(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("UVSim - Virtual Machine")
-        self.setGeometry(100, 100, 1600, 1200)
+        self.setGeometry(100, 100, 1800, 1200)
 
         # Main widget and layout
         main_widget = QWidget()
