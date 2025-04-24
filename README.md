@@ -22,11 +22,11 @@ UVSim is a simple virtual machine for running programs written in BasicML, a bas
 ## How to Run
 
 1. Open a terminal or command prompt
-2. Navigate to the directory containing UVSim.py
+2. Navigate to the directory containing UVSimGUI.py
 3. Run the command:
 
    ```
-   python uvsim_gui.py
+   python uvsimgui.py
    ```
 
 4. The application will display the memory registers on the left hand side of the window
